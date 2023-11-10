@@ -28,13 +28,20 @@ def fac : ℕ → ℕ
   | 0 => 1
   | n + 1 => (n + 1) * fac n
 
-lemma fac_zero : fac 0 = 1 := by sorry
+lemma fac_zero : fac 0 = 1 := by rfl
 
-lemma fac_succ (n : ℕ) : fac (n + 1) = (n + 1) * fac n := by sorry
+lemma fac_succ (n : ℕ) : fac (n + 1) = (n + 1) * fac n := by rfl
 
-example : fac 4 = 24 := by sorry
+example : fac 4 = 24 := by rfl
 
-theorem fac_pos (n : ℕ) : 0 < fac n := by sorry
+theorem fac_pos (n : ℕ) : 0 < fac n := by
+  induction n
+  case zero =>
+    rw [fac]
+    norm_num
+  case succ n ih =>
+    rw [fac]
+    sorry
 
 /-
 Two useful tactics:
@@ -42,7 +49,14 @@ Two useful tactics:
 `positivity`: can show that something is positive/non-negative from using that its components are positive/non-negative.
 -/
 
-theorem pow_two_le_fac (n : ℕ) : 2 ^ n ≤ fac (n + 1) := by sorry
+theorem pow_two_le_fac (n : ℕ) : 2 ^ n ≤ fac (n + 1) := by
+  induction n
+  case zero =>
+    norm_num
+  case succ k ih =>
+    rw [fac, pow_add, mul_comm]
+    gcongr
+    exact Nat.le_add_left (2 ^ 1) k
 
 
 open BigOperators Finset
@@ -55,14 +69,27 @@ example (f : ℕ → ℝ) : ∑ i in range 0, f i = 0 :=
 example (f : ℕ → ℝ) (n : ℕ) : ∑ i in range (n + 1), f i = (∑ i in range n, f i) + f n :=
   sum_range_succ f n
 
-example (n : ℕ) : fac n = ∏ i in range n, (i + 1) := by sorry
+example (n : ℕ) : fac n = ∏ i in range n, (i + 1) := by
+  induction n
+  · case zero => simp
+  · case succ k ih =>
+      rw [fac, prod_range_succ, ← ih, mul_comm]
 
 /- The following result is denoted using division of natural numbers.
 This is defined as division, rounded down.
 This makes it harder to prove things about it, so we generally avoid using it
 (unless you actually want to round down sometimes). -/
 
-theorem sum_id (n : ℕ) : (∑ i in range (n + 1), i) = n * (n + 1) / 2 := by sorry
+theorem sum_id (n : ℕ) : (∑ i in range (n + 1), i) = n * (n + 1) / 2 := by
+  symm
+  rw [Nat.div_eq_of_eq_mul_left]
+  norm_num
+  symm
+  induction n
+  · case zero => simp
+  · case succ k ih =>
+      rw [sum_range_succ, add_mul, ih]
+      ring
 
 
 
@@ -83,7 +110,13 @@ Note: when coercing from `ℕ` to e.g. `ℚ` these tactics will not push/pull ca
 since `↑n - ↑m = ↑(n - m)` and `↑n / ↑m = ↑(n / m)` are not always true.
 -/
 
-example : (∑ i in range (n + 1), i : ℚ) = n * (n + 1) / 2 := by sorry
+example : (∑ i in range (n + 1), i : ℚ) = n * (n + 1) / 2 := by
+  induction n
+  case zero => simp
+  case succ k ih =>
+    rw [sum_range_succ, ih]
+    push_cast
+    ring
 
 
 
@@ -96,15 +129,59 @@ def fib : ℕ → ℕ
 
 /- ## Exercises -/
 
-example : ∑ i in range n, fib (2 * i + 1) = fib (2 * n) := by sorry
+example : ∑ i in range n, fib (2 * i + 1) = fib (2 * n) := by
+  induction n
+  case zero => simp
+  case succ k ih =>
+    rw[sum_range_succ, ih]
+    symm
+    rw [mul_add]
+    symm
+    rw [add_comm]
+    rfl
 
-example : (∑ i in range n, fib i : ℤ) = fib (n + 1) - 1 := by sorry
+example : (∑ i in range n, fib i : ℤ) = fib (n + 1) - 1 := by
+  induction n
+  case zero => simp
+  case succ k ih =>
+    rw[sum_range_succ, ih]
+    calc ↑(fib (k + 1)) - 1 + ↑(fib k)
+     _ = ↑(fib (k + 1)) + (- 1) + ↑(fib k) := by rw [Int.add_neg_one]
+     _ = ↑(fib (k + 1)) + ((- 1) + ↑(fib k)) := by rw [Int.add_assoc]
+     _ = (- 1) + ↑(fib k) + ↑(fib (k + 1)) := by rw [Int.add_comm]
+     _ = (- 1) + (↑(fib k) + ↑(fib (k + 1))) := by rw [Int.add_assoc]
+     _ = ↑(fib k) + ↑(fib (k + 1)) + (-1) := by rw [Int.add_comm]
+     _ = ↑(fib k) + ↑(fib (k + 1)) - 1 := by rw [Int.add_neg_one]
+     _ = ↑((fib k) + (fib (k + 1))) - 1 := by norm_cast
+     _ = ↑((fib (k + 1)) + (fib k)) - 1 := by rw [Nat.add_comm]
+     _ = ↑(fib (k + 1 + 1)) - 1 := by rfl
 
-example : 6 * ∑ i in range (n + 1), i ^ 2 = n * (n + 1) * (2 * n + 1) := by sorry
+example : 6 * ∑ i in range (n + 1), i ^ 2 = n * (n + 1) * (2 * n + 1) := by
+  induction n
+  case zero => simp
+  case succ k ih =>
+    rw [sum_range_succ, mul_add, ih]
+    ring
 
-example : (∑ i in range (n + 1), i ^ 3 : ℚ) = (n * (n + 1) / 2 : ℚ) ^ 2 := by sorry
+example : (∑ i in range (n + 1), i ^ 3 : ℚ) = (n * (n + 1) / 2 : ℚ) ^ 2 := by
+  induction n
+  case zero => simp
+  case succ k ih =>
+    rw [sum_range_succ, ih]
+    push_cast
+    ring
 
-example (n : ℕ) : fac (2 * n) = fac n * 2 ^ n * ∏ i in range n, (2 * i + 1) := by sorry
+example (n : ℕ) : fac (2 * n) = fac n * 2 ^ n * ∏ i in range n, (2 * i + 1) := by
+  induction n
+  case zero => simp
+  case succ k ih =>
+    symm
+    have h₁ : 2 ^ (k+1) = 2 * 2 ^ k := by rw [Nat.pow_succ']
+    have h₂ : fac (k+1) = (k+1) * fac k := by rfl
+    --calc fac (k + 1) * 2 ^ (k + 1) * ∏ i in Finset.range (k + 1), (2 * i + 1)
+    -- _ = fac (k + 1) * 2 ^ (k + 1) * ∏ i in Finset.range (k + 1), (2 * i + 1)
+    rw[prod_range_succ, h₁, h₂, ← mul_assoc, ← mul_assoc, ]
+    sorry
 
 
 
@@ -142,15 +219,23 @@ lemma coe_fib_eq (n : ℕ) : (fib n : ℝ) = (ϕ ^ n - ψ ^ n) / (ϕ - ψ) := by
 * (in)equalities in different types are not the same statement.
 * you can use `norm_cast` to simplify (in)equalities involving casts. -/
 
-example (n : ℤ) (h : (n : ℚ) = 3) : 3 = n := by sorry
+example (n : ℤ) (h : (n : ℚ) = 3) : 3 = n := by
+  norm_cast at h
+  exact h.symm
 
-example (q q' : ℚ) (h : q ≤ q') : exp q ≤ exp q' := by sorry
+example (q q' : ℚ) (h : q ≤ q') : exp q ≤ exp q' := by
+  gcongr
+  norm_cast
 
-example (n : ℤ) (h : 0 < n) : 0 < sqrt n := by sorry
+example (n : ℤ) (h : 0 < n) : 0 < sqrt n := by
+  rw [sqrt_pos]
+  norm_cast
 
-example (n m : ℕ) : (n : ℝ) < (m : ℝ) ↔ n < m := by sorry
+example (n m : ℕ) : (n : ℝ) < (m : ℝ) ↔ n < m := by
+  norm_cast
 
-example (n m : ℕ) (hn : 2 ∣ n) (h : n / 2 = m) : (n : ℚ) / 2 = m := by sorry
+example (n m : ℕ) (hn : 2 ∣ n) (h : n / 2 = m) : (n : ℚ) / 2 = m := by
+  norm_cast
 
 /- We can also induct on various other inductively defined types.
 

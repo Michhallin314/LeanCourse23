@@ -33,17 +33,33 @@ The negation `¬ A` just means `A → False`, where `False` is a specific false 
 We can use the same tactics as for implication:
 `intro` to prove a negation, and `apply` to use one. -/
 
-example {p : Prop} (h : p) : ¬ ¬ p := by sorry
+example {p : Prop} (h : p) : ¬ ¬ p := by
+  intro h2
+  exact h2 h
 
-example {α : Type*} {p : α → Prop} : ¬ (∃ x, p x) ↔ ∀ x, ¬ p x := by sorry
+example {α : Type*} {p : α → Prop} : ¬ (∃ x, p x) ↔ ∀ x, ¬ p x := by
+  constructor
+  · intro h x hx
+    apply h
+    exact ⟨x, hx⟩
+  · intro h h2
+    obtain ⟨x, hx⟩ := h2
+    specialize h x hx
+    exact h
 
 /- We can use `exfalso` to use the fact that everything follows from `False`:
 ex falso quod libet -/
-example {p : Prop} (h : ¬ p) : p → 0 = 1 := by sorry
+example {p : Prop} (h : ¬ p) : p → 0 = 1 := by
+  intro h2
+  specialize h h2
+  exfalso
+  exact h
 
 /- `contradiction` proves any goal when two hypotheses are contradictory. -/
 
-example {p : Prop} (h : ¬ p) : p → 0 = 1 := by sorry
+example {p : Prop} (h : ¬ p) : p → 0 = 1 := by
+  intro h2
+  contradiction
 
 
 
@@ -58,13 +74,24 @@ We can use classical reasoning (with the law of the excluded middle) using the f
 * `push_neg` to push negations inside quantifiers and connectives.
 -/
 
-example {p : Prop} (h : ¬ ¬ p) : p := by sorry
+example {p : Prop} (h : ¬ ¬ p) : p := by
+  push_neg at h
+  exact h
 
-example (p q : Prop) (h : ¬ q → ¬ p) : p → q := by sorry
+example (p q : Prop) (h : ¬ q → ¬ p) : p → q := by
+  by_contra h2
+  push_neg at h2
+  obtain ⟨h₁, h₂⟩ := h2
+  exact h h₂ h₁
 
-example (p q r : Prop) (h1 : p → r) (h2 : ¬ p → r) : r := by sorry
+example (p q r : Prop) (h1 : p → r) (h2 : ¬ p → r) : r := by
+  by_cases hp : p
+  · exact h1 hp
+  · exact h2 hp
 
-example {α : Type*} {p : α → Prop} : ¬ (∃ x, p x) ↔ ∀ x, ¬ p x := by sorry
+example {α : Type*} {p : α → Prop} : ¬ (∃ x, p x) ↔ ∀ x, ¬ p x := by
+  push_neg
+  rfl
 
 
 
@@ -74,10 +101,32 @@ def SequentialLimit (u : ℕ → ℝ) (l : ℝ) : Prop :=
   ∀ ε > 0, ∃ N, ∀ n ≥ N, |u n - l| < ε
 
 example (u : ℕ → ℝ) (l : ℝ) :
-    ¬ SequentialLimit u l ↔ ∃ ε > 0, ∀ N, ∃ n ≥ N, |u n - l| ≥ ε := by sorry
+    ¬ SequentialLimit u l ↔ ∃ ε > 0, ∀ N, ∃ n ≥ N, |u n - l| ≥ ε := by
+  rw [SequentialLimit]
+  push_neg
+  rfl
 
 lemma sequentialLimit_unique (u : ℕ → ℝ) (l l' : ℝ) :
-    SequentialLimit u l → SequentialLimit u l' → l = l' := by sorry
+    SequentialLimit u l → SequentialLimit u l' → l = l' := by
+  intro hl hl'
+  by_contra hll'
+  have : |l - l'| > 0
+  · apply abs_pos.2
+    apply sub_ne_zero.2
+    exact hll'
+  rw [SequentialLimit] at hl hl'
+  specialize hl (|l-l'|/2) (by linarith)
+  obtain ⟨N, hN⟩ := hl
+  obtain ⟨N', hN'⟩ := hl' (|l-l'|/2) (by linarith)
+  let N₀ := max N N'
+  specialize hN N₀ (by exact le_max_left N N')
+  specialize hN' N₀ (by exact le_max_right N N')
+  have : |l - l'| < |l - l'| := by
+    calc |l - l'| = |l - u N₀ + (u N₀ - l')| := by ring
+     _ ≤ |l - u N₀| + |u N₀ - l'| := by exact abs_add (l - u N₀) (u N₀ - l')
+     _ = |u N₀ - l| + |u N₀ - l'| := by rw [abs_sub_comm]
+     _ < |l - l'| := by linarith
+  linarith
 
 
 /- ## Exercises -/
@@ -85,14 +134,53 @@ lemma sequentialLimit_unique (u : ℕ → ℝ) (l l' : ℝ) :
 
 /- Prove the following without using `push_neg` or lemmas from the library.
 You will need to use `by_contra` in the proof. -/
-example {α : Type*} (p : α → Prop) : (∃ x, p x) ↔ (¬ ∀ x, ¬ p x) := by sorry
+example {α : Type*} (p : α → Prop) : (∃ x, p x) ↔ (¬ ∀ x, ¬ p x) := by
+  constructor
+  · intro h1 h2
+    obtain ⟨x, hx⟩ := h1
+    specialize h2 x
+    contradiction
+  · intro h1
+    by_contra h2
+    apply h1
+    intro x
+    by_contra hp
+    apply h2
+    use x
 
-lemma convergesTo_const (a : ℝ) : SequentialLimit (fun n : ℕ ↦ a) a := by sorry
+lemma convergesTo_const (a : ℝ) : SequentialLimit (fun n : ℕ ↦ a) a := by
+  rw [SequentialLimit, sub_self, abs_zero]
+  intro ε
+  intro h
+  use 0
+  intro n
+  intro h2
+  exact h
 
 /- The next exercise is harder, and you will probably not finish it during class. -/
 lemma SequentialLimit.add {s t : ℕ → ℝ} {a b : ℝ}
     (hs : SequentialLimit s a) (ht : SequentialLimit t b) :
-    SequentialLimit (fun n ↦ s n + t n) (a + b) := by sorry
+    SequentialLimit (fun n ↦ s n + t n) (a + b) := by
+  rw [SequentialLimit]
+  intro ε hε
+  rw [SequentialLimit] at hs ht
+  have hε' : ε/2 > 0 := by linarith
+  obtain ⟨N, hN⟩ := hs (ε/2) hε'
+  obtain ⟨N', hN'⟩ := ht (ε/2) hε'
+  let N₀ := max N N'
+  specialize hN N₀ (by exact le_max_left N N')
+  specialize hN' N₀ (by exact le_max_right N N')
+  --specialize hs (ε/2)
+  --specialize ht (ε/2)
+  --specialize hs hε (by exact?)
+  have : |s N₀ + t N₀ - (a + b)| < ε := by
+    calc |s N₀ + t N₀ - (a + b)| = |s N₀ - a + (t N₀ - b)| := by rw [add_sub_add_comm]
+     _ ≤ |s N₀ - a| + |t N₀ - b| := by exact abs_add (s N₀ - a) (t N₀ - b)
+     _ < ε/2 + ε/2 := by exact add_lt_add hN hN'
+     _ = ε := by exact add_halves ε
+  use N₀
+  intro n h
+  sorry
 
 
 
@@ -147,13 +235,15 @@ corresponds by definition to conjunction, disjunction or negation. -/
 * directly apply `constructor`
 * give a direct proof: `⟨xs, xt⟩`
 -/
-example (hxs : x ∈ s) (hxt : x ∈ t) : x ∈ s ∩ t := by sorry
+example (hxs : x ∈ s) (hxt : x ∈ t) : x ∈ s ∩ t := by
+  constructor
+  · exact hxs
+  · exact hxt
 
 
-example (hxs : x ∈ s) : x ∈ s ∪ t := by sorry
-
-
-
+example (hxs : x ∈ s) : x ∈ s ∪ t := by
+  constructor
+  exact hxs
 
 
 
@@ -164,12 +254,17 @@ example (hxs : x ∈ s) : x ∈ s ∪ t := by sorry
 
 #check subset_def
 
-example : s ∩ t ⊆ s ∩ (t ∪ u) := by sorry
+example : s ∩ t ⊆ s ∩ (t ∪ u) := by
+  intro y h
+  constructor
+  · exact h.1
+  · left
+    exact h.2
 
 /- you can also prove it at thge level of sets, without talking about elements. -/
-example : s ∩ t ⊆ s ∩ (t ∪ u) := by sorry
-
-
+example : s ∩ t ⊆ s ∩ (t ∪ u) := by
+  gcongr
+  exact subset_union_left t u
 
 
 
@@ -179,7 +274,16 @@ You can prove that two sets are equal by applying `subset_antisymm` or using the
 -/
 #check (subset_antisymm : s ⊆ t → t ⊆ s → s = t)
 
-example : s ∩ t = t ∩ s := by sorry
+example : s ∩ t = t ∩ s := by
+  ext y
+  constructor
+  · intro h
+    exact ⟨h.2, h.1⟩
+  · intro h
+    obtain ⟨h1, h2⟩ := h
+    constructor
+    · exact h2
+    · exact h1
 
 /- We can also use existing lemmas and `calc`. -/
 example : (s ∪ tᶜ) ∩ t = s ∩ t := by sorry

@@ -50,15 +50,20 @@ variable (a b c d x y z : ℝ)
 
 /- We can apply these lemmas manually, or use the `rfl`/`trans`/`calc` tactics. -/
 
-example (x : ℝ) : x ≤ x := by sorry
+example (x : ℝ) : x ≤ x := by apply le_refl
 
 
 
-example (x y z : ℝ) (h₀ : x ≤ y) (h₁ : y ≤ z) : x ≤ z := by sorry
+example (x y z : ℝ) (h₀ : x ≤ y) (h₁ : y ≤ z) : x ≤ z := by apply le_trans h₀ h₁
 
 
 
-example (h₀ : a ≤ b) (h₁ : b < c) (h₂ : c ≤ d) (h₃ : d < e) : a < e := by sorry
+example (h₀ : a ≤ b) (h₁ : b < c) (h₂ : c ≤ d) (h₃ : d < e) : a < e := by
+  calc a
+    ≤ b := h₀
+   _< c := h₁
+   _≤ d := h₂
+   _< e := h₃
 
 
 /- mathlib has lemmas that all common operations are monotone. Here are a few examples. -/

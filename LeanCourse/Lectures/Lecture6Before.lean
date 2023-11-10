@@ -103,7 +103,10 @@ example (𝓒 : Set (Set α)) : ⋃₀ 𝓒 = ⋃ c ∈ 𝓒, c := by ext; simp
 
 
 
-example (C : ι → Set α) (s : Set α) : s ∩ (⋃ i, C i) = ⋃ i, (C i ∩ s) := by sorry
+example (C : ι → Set α) (s : Set α) : s ∩ (⋃ i, C i) = ⋃ i, (C i ∩ s) := by
+  ext x
+  simp
+  rw [and_comm]
 
 
 /- We can take images and preimages of sets.
@@ -116,7 +119,18 @@ example (f : α → β) (s : Set β) : f ⁻¹' s = { x : α | f x ∈ s } := by
 example (f : α → β) (s : Set α) : f '' s = { y : β | ∃ x ∈ s, f x = y } := by rfl
 
 
-example {s : Set α} {t : Set β} {f : α → β} : f '' s ⊆ t ↔ s ⊆ f ⁻¹' t := by sorry
+example {s : Set α} {t : Set β} {f : α → β} : f '' s ⊆ t ↔ s ⊆ f ⁻¹' t := by
+  constructor
+  · intro h x hx
+    simp
+    apply h
+    exact mem_image_of_mem f hx
+  · intro h x hy
+    obtain ⟨x, hx, hxy⟩ := hy
+    rw [← hxy]
+    specialize h hx
+    simp at h
+    assumption
 
 /-
 If you have a hypothesis `h : y = t` or `h : t = y`,
@@ -157,15 +171,67 @@ example : ({1, 3, 5} : Set ℝ) + {0, 10} = {1, 3, 5, 11, 13, 15} := by sorry
 
 /- # Exercises for the break. -/
 
-example {f : β → α} : f '' (f ⁻¹' s) ⊆ s := by sorry
+example {f : β → α} : f '' (f ⁻¹' s) ⊆ s := by
+  simp
+  rfl
 
-example {f : β → α} (h : Surjective f) : s ⊆ f '' (f ⁻¹' s) := by sorry
+example {f : β → α} (h : Surjective f) : s ⊆ f '' (f ⁻¹' s) := by
+  intro y hy
+  simp
+  rw [Surjective] at h
+  specialize h y
+  obtain ⟨a, ha⟩ := h
+  use a
+  constructor
+  · rw [ha]
+    assumption
+  · assumption
 
-example {f : α → β} (h : Injective f) : f '' s ∩ f '' t ⊆ f '' (s ∩ t) := by sorry
+example {f : α → β} (h : Injective f) : f '' s ∩ f '' t ⊆ f '' (s ∩ t) := by
+  intro a ha
+  simp
+  simp at ha
+  obtain ⟨ha1, ha2⟩ := ha
+  obtain ⟨x₁, hx₁⟩ := ha1
+  obtain ⟨x₂, hx₂⟩ := ha2
+  rw [Injective] at h
+  have ha : x₁ = x₂ := by
+    obtain ⟨hx₁₁, hx₁₂⟩ := hx₁
+    obtain ⟨hx₂₁, hx₂₂⟩ := hx₂
+    have h' : f x₁ = f x₂ := by rw[hx₁₂, hx₂₂]
+    specialize h h'
+    assumption
+  rw [← ha] at hx₂
+  use x₁
+  constructor
+  · constructor
+    · exact hx₁.1
+    · exact hx₂.1
+  · exact hx₁.2
 
-example {I : Type*} (f : α → β) (A : I → Set α) : (f '' ⋃ i, A i) = ⋃ i, f '' A i := by sorry
+example {I : Type*} (f : α → β) (A : I → Set α) : (f '' ⋃ i, A i) = ⋃ i, f '' A i := by
+  ext y
+  constructor
+  · intro h
+    simp
+    simp at h
+    obtain ⟨x, h₁, h₂⟩ := h
+    obtain ⟨i, h₁⟩ := h₁
+    use i
+    use x
+  · intro h
+    simp
+    simp at h
+    obtain ⟨i, x, hi, hx⟩ := h
+    use x
+    constructor
+    · use i
+    · assumption
 
-example : (fun x : ℝ ↦ x ^ 2) '' univ = { y : ℝ | y ≥ 0 } := by sorry
+example : (fun x : ℝ ↦ x ^ 2) '' univ = { y : ℝ | y ≥ 0 } := by
+  simp
+
+  sorry
 
 
 /-
@@ -187,14 +253,16 @@ variable (f : α → β)
 open Classical
 
 def conditionalInverse (y : β) (h : ∃ x, f x = y) : α :=
-  sorry
+  Classical.choose h
 
-lemma invFun_spec (y : β) (h : ∃ x, f x = y) : f (conditionalInverse f y h) = y := sorry
+lemma invFun_spec (y : β) (h : ∃ x, f x = y) : f (conditionalInverse f y h) = y :=
+  Classical.choose_spec h
 
 /- We can now define the function by cases on whether it lies in the range of `f` or not. -/
 
+variable [Inhabited α]
 def inverse (f : α → β) (y : β) : α :=
-  sorry
+  if h : ∃ x : α, f x = y then conditionalInverse f y h else default
 
 local notation "g" => inverse f -- let's call this function `g`
 
@@ -202,9 +270,18 @@ local notation "g" => inverse f -- let's call this function `g`
 /- We can now prove that `g` is a right-inverse if `f` is surjective
 and a left-inverse if `f` is injective.
 We use the `ext` tactic to show that two functions are equal. -/
-example (hf : Surjective f) : f ∘ g = id := by sorry
+example (hf : Surjective f) : f ∘ g = id := by
+  ext y
+  simp
+  obtain ⟨x, rfl⟩ := hf y
+  simp [inverse, invFun_spec]
 
-example (hf : Injective f) : g ∘ f = id := by sorry
+example (hf : Injective f) : g ∘ f = id := by
+  ext y
+  simp
+  simp [inverse]
+  apply hf
+  simp [invFun_spec]
 
 
 end Inverse

@@ -3,7 +3,7 @@
 Please fill out the following:
 ```
 First & last name:
-Uni-ID:
+Uni-ID: s57mkacz
 ```
 
 ## Your own project

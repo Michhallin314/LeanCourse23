@@ -49,17 +49,34 @@ namespace MyRing
 variable {R : Type*} [Ring R]
 
 theorem neg_add_cancel_left (a b : R) : -a + (a + b) = b := by
-  rw [← add_assoc, add_left_neg, zero_add]
+  rw [← add_assoc]
+  rw [add_left_neg]
+  rw [zero_add]
 
 -- Prove these:
 theorem add_neg_cancel_right (a b : R) : a + b + -b = a := by
-  sorry
+  rw [add_comm, ← add_assoc, add_comm, ← add_assoc, add_right_neg, zero_add]
+
 
 theorem add_left_cancel {a b c : R} (h : a + b = a + c) : b = c := by
-  sorry
+  calc b
+    = 0 + b := by rw [zero_add]
+  _ = (-a + a) + b := by rw [add_left_neg]
+  _ = -a + (a + b) := by rw [add_assoc]
+  _ = -a + (a + c) := by rw [h]
+  _ = (-a + a) + c := by rw [add_assoc]
+  _ = 0 + c := by rw [add_left_neg]
+  _ = c := by rw [zero_add]
 
 theorem add_right_cancel {a b c : R} (h : a + b = c + b) : a = c := by
-  sorry
+  calc a
+    = a + 0 := by rw [add_zero]
+  _ = a + (b + -b) := by rw [add_right_neg]
+  _ = a + b + -b := by rw [add_assoc]
+  _ = c + b + -b := by rw [h]
+  _ = c + (b + -b) := by rw [add_assoc]
+  _ = c + 0 := by rw [add_right_neg]
+  _ = c := by rw [add_zero]
 
 theorem mul_zero (a : R) : a * 0 = 0 := by
   have h : a * 0 + a * 0 = a * 0 + 0 := by
@@ -67,7 +84,9 @@ theorem mul_zero (a : R) : a * 0 = 0 := by
   rw [add_left_cancel h]
 
 theorem zero_mul (a : R) : 0 * a = 0 := by
-  sorry
+  have h : 0 * a + 0 * a = 0 * a + 0 := by
+    rw [← add_mul, add_zero, add_zero]
+  rw [add_left_cancel h]
 
 theorem neg_eq_of_add_eq_zero {a b : R} (h : a + b = 0) : -a = b := by
   sorry

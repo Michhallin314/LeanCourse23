@@ -301,28 +301,38 @@ end LinearAlgebra
 
 /- # Exercises -/
 
-theorem units_ne_neg_self [Ring R] [CharZero R] (u : Rˣ) : u ≠ -u := by sorry
+theorem units_ne_neg_self [Ring R] [CharZero R] (u : Rˣ) : u ≠ -u := by
+  by_contra h
+  rw[Units.ext_iff] at h
+  push_cast at h
+
+  sorry
 
 
-example (n m : ℤ) : span {n} ⊔ span {m} = span {gcd n m} := by sorry
+example (n m : ℤ) : span {n} ⊔ span {m} = span {gcd n m} := by
+  rw [span_gcd, ← span_insert]
 
-example (n m : ℤ) : span {n} ⊓ span {m} = span {lcm n m} := by sorry
+example (n m : ℤ) : span {n} ⊓ span {m} = span {lcm n m} := by
+  refine (Ideal.ext ?h).symm
+  sorry
 
 
 /- Show that transposing a matrix gives rise to a linear equivalence. -/
 example {m n : Type*} [Ring R] [AddCommGroup M] [Module R M] :
   Matrix m n M ≃ₗ[R] Matrix n m M where
     toFun := fun M ↦ Mᵀ
-    map_add' := by sorry
-    map_smul' := by sorry
-    invFun := by sorry
-    left_inv := by sorry
-    right_inv := by sorry
+    map_add' := by exact fun x y => rfl
+    map_smul' := by exact fun r x => rfl
+    invFun := by exact fun a => aᵀ
+    left_inv := by exact congrFun rfl
+    right_inv := by exact congrFun rfl
 
 
 /- In a module over a ring with characteristic 2, for every element `m` we have `m + m = 0`. -/
 example {R M : Type*} [Ring R] [AddCommGroup M] [Module R M] [CharP R 2] (m : M) :
-    m + m = 0 := by sorry
+    m + m = 0 := by
+
+  sorry
 
 section Frobenius
 
