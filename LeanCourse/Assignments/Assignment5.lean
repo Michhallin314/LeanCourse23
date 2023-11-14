@@ -30,9 +30,15 @@ variable {R M₁ M₂ N : Type*} [CommRing R] [AddCommGroup M₁] [AddCommGroup 
 
 /- Define the coproduct of two linear maps that send (x, y) ↦ f x + g y. -/
 
-def exercise5_1 (f : M₁ →ₗ[R] N) (g : M₂ →ₗ[R] N) : M₁ × M₂ →ₗ[R] N := sorry
+def exercise5_1 (f : M₁ →ₗ[R] N) (g : M₂ →ₗ[R] N) : M₁ × M₂ →ₗ[R] N where
+  toFun := fun (m₁, m₂) ↦ f m₁ + g m₂
+  map_add' := by
+    simp
+    exact fun a b a_1 b_1 ↦ add_add_add_comm (f a) (f a_1) (g b) (g b_1)
+  map_smul' := by
+    simp
 example (f : M₁ →ₗ[R] N) (g : M₂ →ₗ[R] N) (x : M₁) (y : M₂) :
-  exercise5_1 f g (x, y) = f x + g y := sorry -- should be rfl
+  exercise5_1 f g (x, y) = f x + g y := by rfl -- should be rfl
 
 
 end LinearMap
@@ -52,7 +58,19 @@ variable {R : Type*} [CommRing R]
 #check Exists.choose_spec
 def IsAUnit (x : R) : Prop := ∃ y, y * x = 1
 
-instance exercise5_2 : Group {x : R // IsAUnit x} := sorry
+instance exercise5_2 : Group {x : R // IsAUnit x} := by
+  have h {x y : R} (h₁ : IsAUnit x) (h₂ : IsAUnit y) : IsAUnit (x * y) := by
+    rw [IsAUnit]
+    rw [IsAUnit] at h₁ h₂
+    obtain ⟨t₁, h₁⟩ := h₁
+    obtain ⟨t₂, h₂⟩ := h₂
+    use (t₁*t₂)
+    rw[mul_comm t₁ t₂, mul_assoc, mul_comm, ← mul_assoc, mul_assoc, mul_comm y t₂, h₁, h₂]
+    simp
+  --let y := Exists.choose_spec IsAUnit
+  --let x := Exists.choose.{x : R // IsAUnit x}
+  --let y := (IsAUnit x)^(-1)
+  sorry
 
 -- you have the correct group structure if this is true by `rfl`
 example (x y : {x : R // IsAUnit x}) : (↑(x * y) : R) = ↑x * ↑y := by sorry
@@ -74,11 +92,23 @@ lemma exercise5_3 (x y : K) : (x + y) ^ p = x ^ p + y ^ p := by
   have h3 : 0 < p := h2.pos
   have h4 : range p = insert 0 (Ioo 0 p)
   · ext (_|_) <;> simp [h3]
-  have h5 : ∀ i ∈ Ioo 0 p, p ∣ Nat.choose p i := by sorry
+  have h5 : ∀ i ∈ Ioo 0 p, p ∣ Nat.choose p i := by
+    intro i h_t
+    rw [Ioo, LocallyFiniteOrder.finsetIoo, instLocallyFiniteOrderNatToPreorderToPartialOrderStrictOrderedSemiring] at h_t
+    have hyp : i ≠ 0 := by
+      sorry
+    have hyp2 : i < p := by
+      sorry
+    exact Prime.dvd_choose_self h2 hyp hyp2
   have h6 : ∑ i in Ioo 0 p, x ^ i * y ^ (p - i) * Nat.choose p i = 0 :=
-  calc
-    _ =  ∑ i in Ioo 0 p, x ^ i * y ^ (p - i) * 0 := by sorry
-    _ = 0 := by sorry
+    calc ∑ i in Ioo 0 p, x ^ i * y ^ (p - i) * Nat.choose p i
+     _ = ∑ i in Ioo 0 p, x ^ i * y ^ (p - i) * 0 := by sorry
+     _ = 0 := by sorry
+  rw[sum_range_succ, h4, insert_eq]
+  simp
+  rw[sum_eq_add_sum_diff_singleton]
+  sorry
+  sorry
   sorry
 
 
@@ -91,4 +121,5 @@ lemma exercise5_4 {R M M' : Type*} [Ring R] [AddCommGroup M] [Module R M] [Nontr
     [NoZeroSMulDivisors R M] [Module R (M →ₗ[R] M)]
     (h : ∀ (r : R) (f : M →ₗ[R] M) (x : M), (r • f) x = r • f x)
     (r s : R) : r * s = s * r := by
+  have hₜ : exists_ne M := by sorry
   sorry
