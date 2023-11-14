@@ -166,7 +166,12 @@ example {X Y Z : Type*} {F : Filter X} {G : Filter Y} {H : Filter Z}
     {f : X → Y} {g : Y → Z}
     (hf : Tendsto f F G) (hg : Tendsto g G H) :
     Tendsto (g ∘ f) F H := by
-  sorry /- # Exercise -/
+  rw[Tendsto] at *
+  calc
+    map (g ∘ f) F = map g (map f F) := by exact rfl
+    _ ≤ map g G := by gcongr
+    _ ≤ H := by assumption
+     /- # Exercise -/
 
 /-
 Filters also allow us to reason about things that are
@@ -199,7 +204,11 @@ variable {Y : Type*} [TopologicalSpace Y]
 
 
 example {ι : Type*} (s : ι → Set X) : interior (⋂ i, s i) ⊆ ⋂ i, interior (s i) := by
-  sorry
+  intro x hx
+  simp
+  intro i
+  apply interior_mono ?_ hx
+  exact iInter_subset (fun i ↦ s i) i
 
 /- A map between topological spaces is continuous if the
 preimages of open sets are open. -/
@@ -391,16 +400,23 @@ If you know category theory, this is an *adjunction* between orders
 -/
 @[simps]
 def cl (U : RegularOpens X) : Closeds X :=
-  ⟨closure U, sorry⟩
+  ⟨closure U, isClosed_closure⟩
 
 /- The interior of a closed set. You will have to prove yourself that it is regular open. -/
 @[simps]
 def _root_.TopologicalSpace.Closeds.int (C : Closeds X) : RegularOpens X :=
-  ⟨interior C, sorry, sorry⟩
+  ⟨interior C, isOpen_interior, sorry⟩
 
 /- Now let's show the relation between these two operations. -/
 lemma cl_le_iff {U : RegularOpens X} {C : Closeds X} :
-    U.cl ≤ C ↔ U ≤ C.int := by sorry
+    U.cl ≤ C ↔ U ≤ C.int := by
+  constructor
+  ·
+    rw[Closeds.int, cl]
+
+    sorry
+  rw [cl]
+  sorry
 
 @[simp] lemma cl_int : U.cl.int = U := by sorry
 
@@ -460,11 +476,14 @@ instance completeDistribLattice : CompleteDistribLattice (RegularOpens X) :=
     }
 
 
-instance : HasCompl (RegularOpens X) := sorry
+instance : HasCompl (RegularOpens X) :=
+  sorry
 
 
 @[simp]
-lemma coe_compl (U : RegularOpens X) : ↑Uᶜ = interior (U : Set X)ᶜ := by sorry
+lemma coe_compl (U : RegularOpens X) : ↑Uᶜ = interior (U : Set X)ᶜ := by
+  simp
+  sorry
 
 
 instance : CompleteBooleanAlgebra (RegularOpens X) :=
